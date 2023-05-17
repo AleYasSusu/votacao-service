@@ -27,7 +27,7 @@ public interface PautaController {
             responseCode = "201",
             description = "HTTP Status 201 CREATED"
     )
-    Pauta create(@Valid @RequestBody Pauta pauta);
+    Pauta createNewPauta(@Valid @RequestBody Pauta pauta);
 
     @Operation(
             summary = "Get Pauta by id REST API",

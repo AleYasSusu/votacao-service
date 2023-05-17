@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface VotoRepository extends JpaRepository<Vote, Long> {
+public interface VoteRepository extends JpaRepository<Vote, Long> {
     Optional<Vote> findByCpf(String cpf);
 
     Optional<List<Vote>> findByPautaId(Long id);

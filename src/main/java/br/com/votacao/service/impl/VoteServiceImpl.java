@@ -1,20 +1,19 @@
 package br.com.votacao.service.impl;
 
 import br.com.votacao.domain.CpfValidationDto;
-import br.com.votacao.domain.VotacaoDto;
 import br.com.votacao.exception.InvalidCpfException;
 import br.com.votacao.exception.InvalidSessionException;
 import br.com.votacao.exception.SessaoTimeOutException;
 import br.com.votacao.exception.UnableCpfException;
 import br.com.votacao.exception.VotoAlreadyExistsException;
 import br.com.votacao.exception.VotoNotFoundException;
-import br.com.votacao.kafka.KafkaSender;
-import br.com.votacao.model.Pauta;
 import br.com.votacao.model.Session;
 import br.com.votacao.model.Vote;
-import br.com.votacao.repository.VotoRepository;
+import br.com.votacao.repository.VoteRepository;
+import br.com.votacao.service.SessionService;
 import br.com.votacao.service.VoteService;
-import lombok.RequiredArgsConstructor;
+import br.com.votacao.service.VotingService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -35,23 +34,34 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
 @Service
-@RequiredArgsConstructor
 public class VoteServiceImpl implements VoteService {
 
-    private static final String CPF_UNABLE_TO_VOTE = "UNABLE_TO_VOTE";
-
-    @Value("${app.integracao.cpf.url}")
-    private String urlCpfValidator = "";
-
-    private final VotoRepository votoRepository;
+    private static final String CPF_NOT_ABLE_TO_VOTE = "UNABLE_TO_VOTE";
+    private final VoteRepository voteRepository;
     private final RestTemplate restTemplate;
-    private final KafkaSender kafkaSender;
-    private final SessionServiceImpl sessaoServiceImpl;
-    private final VotingServiceImpl votingServiceImpl;
+    private final SessionService sessionService;
+    private final VotingService votingService;
+    @Value("${app.integracao.cpf.url}")
+    private String urlCpfValidator;
+
+    @Autowired
+    public VoteServiceImpl(RestTemplate restTemplate,
+                           VoteRepository voteRepository,
+                           SessionService sessionService,
+                           VotingService votingService) {
+
+        this.restTemplate = restTemplate;
+        this.voteRepository = voteRepository;
+        this.sessionService = sessionService;
+        this.votingService = votingService;
+    }
+
+
+
 
     @Override
     public Vote findById(Long id) {
-        Optional<Vote> findById = votoRepository.findById(id);
+        Optional<Vote> findById = voteRepository.findById(id);
         if (!findById.isPresent()) {
             throw new VotoNotFoundException();
         }
@@ -70,13 +80,13 @@ public class VoteServiceImpl implements VoteService {
 
     @Override
     public List<Vote> findAll() {
-        return votoRepository.findAll();
+        return voteRepository.findAll();
     }
 
 
     @Override
     public Vote createNewVote(Long idPauta, Long idSessao, Vote voto) {
-        Session session = sessaoServiceImpl.findByIdAndPautaId(idSessao, idPauta);
+        Session session = sessionService.findByIdAndPautaId(idSessao, idPauta);
         if (!idPauta.equals(session.getPauta().getId())) {
             throw new InvalidSessionException();
         }
@@ -86,13 +96,12 @@ public class VoteServiceImpl implements VoteService {
 
     public Vote saveAndVerify(final Session session, final Vote voto) {
         verifyVote(session, voto);
-        return votoRepository.save(voto);
+        return voteRepository.save(voto);
     }
 
     private void verifyVote(final Session session, final Vote vote) {
         LocalDateTime dataLimite = session.getDataInicio().plusMinutes(session.getMinutosValidade());
         if (LocalDateTime.now().isAfter(dataLimite)) {
-            sendMessage(vote.getPauta());
             throw new SessaoTimeOutException();
         }
 
@@ -101,22 +110,17 @@ public class VoteServiceImpl implements VoteService {
     }
 
     private void votoAlreadyExists(final Vote vote) {
-        Optional<Vote> voteByCpfAndPauta = votoRepository
+        Optional<Vote> voteByCpfAndPauta = voteRepository
                 .findByCpfAndPautaId(vote.getCpf(), vote.getPauta().getId());
         if (voteByCpfAndPauta.isPresent()) {
             throw new VotoAlreadyExistsException();
         }
     }
 
-    private void sendMessage(Pauta pauta) {
-        VotacaoDto votacaoPauta = votingServiceImpl.buildVotacaoPauta(pauta.getId());
-        kafkaSender.sendMessage(votacaoPauta);
-    }
-
     private void cpfAbleToVote(final Vote voto) {
         ResponseEntity<CpfValidationDto> cpfValidation = getCpfValidation(voto);
         if (cpfValidation.getStatusCode().is2xxSuccessful()) {
-            if (CPF_UNABLE_TO_VOTE.equalsIgnoreCase(Objects.requireNonNull(cpfValidation.getBody())
+            if (CPF_NOT_ABLE_TO_VOTE.equalsIgnoreCase(Objects.requireNonNull(cpfValidation.getBody())
                     .getStatus())) {
                 throw new UnableCpfException();
             }
@@ -148,7 +152,7 @@ public class VoteServiceImpl implements VoteService {
 
     @Override
     public List<Vote> findVotosByPautaId(Long id) {
-        Optional<List<Vote>> findByPautaId = votoRepository.findByPautaId(id);
+        Optional<List<Vote>> findByPautaId = voteRepository.findByPautaId(id);
 
         if (!findByPautaId.isPresent()) {
             throw new VotoNotFoundException();
@@ -159,25 +163,25 @@ public class VoteServiceImpl implements VoteService {
 
     @Override
     public void delete(Long id) {
-        Optional<Vote> votoById = votoRepository.findById(id);
+        Optional<Vote> votoById = voteRepository.findById(id);
         if (!votoById.isPresent()) {
             throw new VotoNotFoundException();
         }
-        votoRepository.delete(votoById.get());
+        voteRepository.delete(votoById.get());
     }
     @Override
     public void deleteByPautaId(Long id) {
-        Optional<List<Vote>> votos = votoRepository.findByPautaId(id);
-        votos.ifPresent(votoRepository::deleteAll);
+        Optional<List<Vote>> votos = voteRepository.findByPautaId(id);
+        votos.ifPresent(voteRepository::deleteAll);
     }
 
     @Override
     public Optional<Vote> findByCpf(String cpf) {
-        return votoRepository.findByCpf(cpf);
+        return voteRepository.findByCpf(cpf);
     }
 
     @Override
     public Optional<List<Vote>> findByPautaId(Long id) {
-        return votoRepository.findByPautaId(id);
+        return voteRepository.findByPautaId(id);
     }
 }

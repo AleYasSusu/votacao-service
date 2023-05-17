@@ -7,18 +7,24 @@ import br.com.votacao.model.Session;
 import br.com.votacao.repository.SessaoRepository;
 import br.com.votacao.service.PautaService;
 import br.com.votacao.service.SessionService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class SessionServiceImpl implements SessionService {
 
     private final SessaoRepository sessaoRepository;
+
     private final PautaService pautaService;
+
+    @Autowired
+    public SessionServiceImpl(SessaoRepository sessaoRepository, PautaService pautaService) {
+        this.sessaoRepository = sessaoRepository;
+        this.pautaService = pautaService;
+    }
 
     @Override
     public List<Session> findAll() {
@@ -48,6 +54,7 @@ public class SessionServiceImpl implements SessionService {
         }
         sessaoRepository.deleteById(id);
     }
+
     @Override
     public void deleteByPautaId(Long id) {
         sessaoRepository.deleteByPautaId(id);

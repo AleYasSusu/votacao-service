@@ -4,19 +4,30 @@ import br.com.votacao.exception.PautaNotFoundException;
 import br.com.votacao.model.Pauta;
 import br.com.votacao.repository.PautaRepository;
 import br.com.votacao.service.PautaService;
+import br.com.votacao.service.SessionService;
 import br.com.votacao.service.VoteService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class PautaServiceImpl implements PautaService {
 
     private final PautaRepository pautaRepository;
-    private final SessionServiceImpl sessaoServiceImpl;
+
+    @Autowired
+    public PautaServiceImpl(PautaRepository pautaRepository,
+                            SessionService sessaoService,
+                            VoteService voteServiceImpl) {
+        this.pautaRepository = pautaRepository;
+        this.sessaoService = sessaoService;
+        this.voteServiceImpl = voteServiceImpl;
+    }
+
+    private final SessionService sessaoService;
     private final VoteService voteServiceImpl;
 
     @Override
@@ -36,7 +47,7 @@ public class PautaServiceImpl implements PautaService {
             throw new PautaNotFoundException();
         }
         pautaRepository.delete(pautaById.get());
-        sessaoServiceImpl.deleteByPautaId(id);
+        sessaoService.deleteByPautaId(id);
         voteServiceImpl.deleteByPautaId(id);
     }
 

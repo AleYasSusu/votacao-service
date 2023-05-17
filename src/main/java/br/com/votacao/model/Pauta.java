@@ -7,7 +7,6 @@ import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 @Entity
-@EqualsAndHashCode
 @Getter
 @Setter
 @NoArgsConstructor
