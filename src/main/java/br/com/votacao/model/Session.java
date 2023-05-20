@@ -1,15 +1,10 @@
 package br.com.votacao.model;
 
+
 import lombok.*;
 
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
+
+import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -18,7 +13,9 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "tbl_session")
+@EqualsAndHashCode
+@Builder
+@Table(name = "session")
 public class Session implements Serializable {
     @Id
     @SequenceGenerator(name = "sessao_seq", sequenceName = "sessao_seq", allocationSize = 1)

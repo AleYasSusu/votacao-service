@@ -1,12 +1,9 @@
 package br.com.votacao.controller;
 
-import br.com.votacao.domain.VotacaoDto;
+import br.com.votacao.domain.VotingDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.ResponseStatus;
 
 public interface VotingController {
 
@@ -18,5 +15,5 @@ public interface VotingController {
             responseCode = "200",
             description = "HTTP Status 200 SUCESS"
     )
-    VotacaoDto findVotosByPautaId(@PathVariable Long id);
+    VotingDto findVotosByPautaId(@PathVariable Long id);
 }

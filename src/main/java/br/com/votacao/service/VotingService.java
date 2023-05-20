@@ -1,6 +1,6 @@
 package br.com.votacao.service;
 
-import br.com.votacao.domain.VotacaoDto;
+import br.com.votacao.domain.VotingDto;
 import br.com.votacao.model.Vote;
 
 import java.util.List;
@@ -8,11 +8,11 @@ import java.util.List;
 public interface VotingService {
     Vote save(Vote voto);
 
-    void delete(Long id);
+    void delete(Vote voto);
 
     List<Vote> findVotosByPautaId(Long id);
 
-    VotacaoDto getResultVotacao(Long id);
+    VotingDto getResultVotacao(Long id);
 
-    VotacaoDto buildVotacaoPauta(Long id);
+    VotingDto buildVotingPauta(Long id);
 }

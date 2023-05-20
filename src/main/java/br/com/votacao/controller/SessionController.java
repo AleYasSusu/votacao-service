@@ -1,9 +1,13 @@
 package br.com.votacao.controller;
 
+import br.com.votacao.model.Pauta;
 import br.com.votacao.model.Session;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
 
 import javax.validation.Valid;
 import java.util.List;
@@ -19,6 +23,7 @@ public interface SessionController {
     )
     List<Session> findAll();
 
+
     @Operation(
             summary = "Create Session REST API",
             description = "Create Session REST API is used to save session in database"
@@ -27,7 +32,8 @@ public interface SessionController {
             responseCode = "201",
             description = "HTTP Status 201 CREATED"
     )
-    Session createSession(@PathVariable Long id, @Valid @RequestBody Session session);
+    Session createSession(@RequestBody Pauta pauta,
+                          @RequestParam(required = false) Long minutosValidade);
 
     @Operation(
             summary = "Find Session",

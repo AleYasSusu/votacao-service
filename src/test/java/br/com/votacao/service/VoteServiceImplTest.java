@@ -1,113 +1,95 @@
 package br.com.votacao.service;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import br.com.votacao.builder.SessionBuilder;
+import br.com.votacao.builder.VoteBuilder;
+import br.com.votacao.domain.CpfValidationDto;
+import br.com.votacao.domain.VotingDto;
+import br.com.votacao.exception.InvalidCpfException;
+import br.com.votacao.exception.SessionTimeOutException;
+import br.com.votacao.exception.UnableCpfException;
+import br.com.votacao.exception.VoteAlreadyExistsException;
+import br.com.votacao.model.Pauta;
+import br.com.votacao.model.Session;
+import br.com.votacao.model.Vote;
+import br.com.votacao.repository.VoteRepository;
+import br.com.votacao.service.impl.VoteServiceImpl;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
 public class VoteServiceImplTest {
-/**
-	private VoteServiceImpl voteServiceImpl;
-	@Mock
-	private VotoRepository votoRepository;
-	@Mock
-	private RestTemplate restTemplate;
-	@Mock
-	private KafkaSender kafkaSender;
-	@Mock
-	private VotacaoService votacaoService;
-	@Mock
-	private SessaoService sessaoService;
+    @InjectMocks
+    private VoteServiceImpl voteService;
+    @Mock
+    private VoteRepository votoRepository;
+    @Mock
+    private RestTemplate restTemplate;
+    @Mock
+    private VotingService votacaoService;
+    @Mock
+    private SessionService sessaoService;
 
-	@Before
-	public void setup() {
-		MockitoAnnotations.initMocks(this);
-		/**	voteServiceImpl = new VoteServiceImpl(restTemplate, votoRepository, kafkaSender, sessaoService, votacaoService);
-	}
+    @Before
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
 
-	/**@Test(expected = SessaoTimeOutException.class)
-	public void verifyVotoTest() {
-		Sessao sessao = new Sessao();
-		sessao.setDataInicio(LocalDateTime.now());
-		sessao.setMinutosValidade(-1L);
+    }
 
-		Voto voto = new Voto();
-		Pauta pauta = new Pauta();
-		pauta.setId(1L);
-		voto.setPauta(pauta);
+    @Test(expected = SessionTimeOutException.class)
+    public void verifyVotoTest() {
+        Session session = new Session();
+        session.setDataInicio(LocalDateTime.now());
+        session.setMinutosValidade(-1L);
 
-		when(votacaoService.buildVotacaoPauta(anyLong())).thenReturn(VotacaoDto.builder().build());
+        Vote voto = new Vote();
+        Pauta pauta = new Pauta();
+        pauta.setId(1L);
+        voto.setPauta(pauta);
 
-		voteServiceImpl.verifyVoto(sessao, voto);
-	}
+        when(votacaoService.buildVotingPauta(anyLong())).thenReturn(VotingDto.builder().build());
 
-	@Test(expected = InvalidCpfException.class)
-	public void cpfAbleToVoteTest() {
-		Voto voto = new Voto();
-		voto.setCpf("1234");
+        voteService.verifyVote(session, voto);
+    }
 
-		CpfValidationDto cpf = new CpfValidationDto();
-		cpf.setStatus("TESTE");
+    @Test(expected = VoteAlreadyExistsException.class)
+    public void votoAlreadyExistsTest() {
+        Vote voto = new Vote();
+        voto.setCpf("1234");
+        Pauta pauta = new Pauta();
+        pauta.setId(1L);
+        voto.setPauta(pauta );
+        when(votoRepository.findByCpfAndPautaId(anyString(), anyLong())).thenReturn(Optional.of(new Vote()));
+        voteService.voteAlreadyExists(voto);
+    }
 
-		ResponseEntity<CpfValidationDto> response = new ResponseEntity<>(cpf, HttpStatus.NOT_FOUND);
+    @Test
+    public void votoAlreadyExistssTest() {
+        Vote vote = new Vote();
+        vote.setCpf("1234");
+        Pauta pauta = new Pauta();
+        pauta.setId(1L);
+        vote.setPauta(pauta );
 
-		when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(CpfValidationDto.class)))
-				.thenReturn(response);
-
-		voteServiceImpl.cpfAbleToVote(voto);
-	}
-
-	@Test(expected = UnableCpfException.class)
-	public void cpfAbleToVote2Test() {
-		Voto voto = new Voto();
-		voto.setCpf("1234");
-
-		CpfValidationDto cpf = new CpfValidationDto();
-		cpf.setStatus("UNABLE_TO_VOTE");
-
-		ResponseEntity<CpfValidationDto> response = new ResponseEntity<>(cpf, HttpStatus.OK);
-
-		when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(CpfValidationDto.class)))
-				.thenReturn(response);
-
-		voteServiceImpl.cpfAbleToVote(voto);
-	}
-
-	@Test
-	public void cpfAbleToVote3Test() {
-		Voto voto = new Voto();
-		voto.setCpf("1234");
-
-		CpfValidationDto cpf = new CpfValidationDto();
-		cpf.setStatus("ABLE_TO_VOTE");
-
-		ResponseEntity<CpfValidationDto> response = new ResponseEntity<>(cpf, HttpStatus.OK);
-
-		when(restTemplate.exchange(anyString(), eq(HttpMethod.GET), any(), eq(CpfValidationDto.class)))
-				.thenReturn(response);
-
-		voteServiceImpl.cpfAbleToVote(voto);
-	}
-
-	@Test(expected = VotoAlreadyExistsException.class)
-	public void votoAlreadyExistsTest() {
-		Voto voto = new Voto();
-		voto.setCpf("1234");
-		Pauta pauta = new Pauta();
-		pauta.setId(1L);
-		voto.setPauta(pauta );
-		when(votoRepository.findByCpfAndPautaId(anyString(), anyLong())).thenReturn(Optional.of(new Voto()));
-		voteServiceImpl.votoAlreadyExists(voto);
-	}
-	
-	@Test
-	public void votoAlreadyExistssTest() {
-		Voto voto = new Voto();
-		voto.setCpf("1234");
-		Pauta pauta = new Pauta();
-		pauta.setId(1L);
-		voto.setPauta(pauta );
-		
-		when(votoRepository.findByCpfAndPautaId(anyString(), anyLong())).thenReturn(Optional.empty());
-		voteServiceImpl.votoAlreadyExists(voto);
-	}
-		 **/
+        when(votoRepository.findByCpfAndPautaId(anyString(), anyLong())).thenReturn(Optional.empty());
+        voteService.voteAlreadyExists(vote);
+    }
 }

@@ -11,7 +11,9 @@ import java.io.Serializable;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "tbl_pauta")
+@Builder
+@EqualsAndHashCode
+@Table(name = "pauta")
 public class Pauta implements Serializable {
     @Id
     @SequenceGenerator(name = "pauta_seq", sequenceName = "pauta_seq", allocationSize = 1)

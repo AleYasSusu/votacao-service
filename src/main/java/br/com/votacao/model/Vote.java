@@ -1,16 +1,11 @@
 package br.com.votacao.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.*;
 
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
+
+import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
@@ -20,11 +15,13 @@ import java.io.Serializable;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "tbl vote")
+@EqualsAndHashCode
+@Builder
+@Table(name = "vote")
 public class Vote implements Serializable {
     @Id
-    @SequenceGenerator(name = "sessao_seq", sequenceName = "sessao_seq", allocationSize = 1)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sessao_seq")
+    @SequenceGenerator(name = "vote_seq", sequenceName = "svote_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "vote_seq")
     private Long id;
 
     @NotBlank(message = "voto-1")

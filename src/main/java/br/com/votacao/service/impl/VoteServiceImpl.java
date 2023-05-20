@@ -1,81 +1,52 @@
 package br.com.votacao.service.impl;
 
 import br.com.votacao.domain.CpfValidationDto;
-import br.com.votacao.exception.InvalidCpfException;
-import br.com.votacao.exception.InvalidSessionException;
-import br.com.votacao.exception.SessaoTimeOutException;
-import br.com.votacao.exception.UnableCpfException;
-import br.com.votacao.exception.VotoAlreadyExistsException;
-import br.com.votacao.exception.VotoNotFoundException;
+import br.com.votacao.exception.*;
 import br.com.votacao.model.Session;
 import br.com.votacao.model.Vote;
 import br.com.votacao.repository.VoteRepository;
 import br.com.votacao.service.SessionService;
 import br.com.votacao.service.VoteService;
 import br.com.votacao.service.VotingService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 
 @Service
+@RequiredArgsConstructor
 public class VoteServiceImpl implements VoteService {
 
     private static final String CPF_NOT_ABLE_TO_VOTE = "UNABLE_TO_VOTE";
     private final VoteRepository voteRepository;
     private final RestTemplate restTemplate;
+    @Lazy
     private final SessionService sessionService;
+    @Lazy
     private final VotingService votingService;
     @Value("${app.integracao.cpf.url}")
-    private String urlCpfValidator;
-
-    @Autowired
-    public VoteServiceImpl(RestTemplate restTemplate,
-                           VoteRepository voteRepository,
-                           SessionService sessionService,
-                           VotingService votingService) {
-
-        this.restTemplate = restTemplate;
-        this.voteRepository = voteRepository;
-        this.sessionService = sessionService;
-        this.votingService = votingService;
-    }
-
-
+    private String urlCpfValidator = "";
 
 
     @Override
     public Vote findById(Long id) {
         Optional<Vote> findById = voteRepository.findById(id);
-        if (!findById.isPresent()) {
-            throw new VotoNotFoundException();
+        if (findById.isEmpty()) {
+            throw new VoteNotFoundException();
         }
         return findById.get();
-    }
-
-    private Cache<String, ResponseEntity<CpfValidationDto>> cache;
-
-    @Override
-    public void initialize() {
-        cache = Caffeine.newBuilder()
-                .expireAfterWrite(5, TimeUnit.MINUTES)
-                .maximumSize(1000)
-                .build();
     }
 
     @Override
@@ -99,76 +70,72 @@ public class VoteServiceImpl implements VoteService {
         return voteRepository.save(voto);
     }
 
-    private void verifyVote(final Session session, final Vote vote) {
+    public void verifyVote(final Session session, final Vote vote) {
         LocalDateTime dataLimite = session.getDataInicio().plusMinutes(session.getMinutosValidade());
         if (LocalDateTime.now().isAfter(dataLimite)) {
-            throw new SessaoTimeOutException();
+            throw new SessionTimeOutException();
         }
-
         cpfAbleToVote(vote);
-        votoAlreadyExists(vote);
+        voteAlreadyExists(vote);
     }
 
-    private void votoAlreadyExists(final Vote vote) {
+    public void voteAlreadyExists(final Vote vote) {
         Optional<Vote> voteByCpfAndPauta = voteRepository
                 .findByCpfAndPautaId(vote.getCpf(), vote.getPauta().getId());
         if (voteByCpfAndPauta.isPresent()) {
-            throw new VotoAlreadyExistsException();
+            throw new VoteAlreadyExistsException();
         }
     }
 
-    private void cpfAbleToVote(final Vote voto) {
-        ResponseEntity<CpfValidationDto> cpfValidation = getCpfValidation(voto);
-        if (cpfValidation.getStatusCode().is2xxSuccessful()) {
-            if (CPF_NOT_ABLE_TO_VOTE.equalsIgnoreCase(Objects.requireNonNull(cpfValidation.getBody())
-                    .getStatus())) {
-                throw new UnableCpfException();
+    @Override
+    public void cpfAbleToVote(Vote vote) {
+        try {
+            var cpfValidation = getCpfValidation(vote);
+            if (HttpStatus.OK.equals(cpfValidation.getStatusCode())) {
+                if (isCpfNotAbleToVote(cpfValidation)) {
+                    throw new UnableCpfException("CPF não está habilitado para votar");
+                }
+            } else {
+                throw new InvalidCpfException();
             }
-        } else {
-            throw new InvalidCpfException();
+        } catch (CpfValidationException e) {
+            throw new UnableCpfException("Erro na validação do CPF", e);
         }
+    }
+
+    private boolean isCpfNotAbleToVote(ResponseEntity<CpfValidationDto> cpfValidation) {
+        return CPF_NOT_ABLE_TO_VOTE.equalsIgnoreCase(Objects.requireNonNull(cpfValidation.getBody()).getStatus());
     }
 
     private ResponseEntity<CpfValidationDto> getCpfValidation(final Vote voto) {
-        // Tenta obter a validação do CPF no cache
-        String cacheKey = "cpf-validation:" + voto.getCpf();
-        ResponseEntity<CpfValidationDto> cachedResult = cache.getIfPresent(cacheKey);
-
-        if (cachedResult != null) {
-            return cachedResult;
-        }
+        String cpfUrl = "/" + voto.getCpf();
+        URI uri = UriComponentsBuilder.fromUriString(urlCpfValidator)
+                .path(cpfUrl)
+                .build()
+                .toUri();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         HttpEntity<String> entity = new HttpEntity<>(headers);
-        ResponseEntity<CpfValidationDto> response = restTemplate.exchange(urlCpfValidator.concat("/")
-                .concat(voto.getCpf()), HttpMethod.GET, entity, CpfValidationDto.class);
 
-        // Armazena a validação do CPF em cache por 5 minutos
-        cache.put(cacheKey, response);
-
-        return response;
+        try {
+            return restTemplate.exchange(uri, HttpMethod.GET, entity, CpfValidationDto.class);
+        } catch (RestClientException e) {
+            throw new CpfValidationException("Erro ao obter validação do CPF", e);
+        }
     }
 
     @Override
     public List<Vote> findVotosByPautaId(Long id) {
         Optional<List<Vote>> findByPautaId = voteRepository.findByPautaId(id);
 
-        if (!findByPautaId.isPresent()) {
-            throw new VotoNotFoundException();
+        if (findByPautaId.isEmpty()) {
+            throw new VoteNotFoundException();
         }
 
         return findByPautaId.get();
     }
 
-    @Override
-    public void delete(Long id) {
-        Optional<Vote> votoById = voteRepository.findById(id);
-        if (!votoById.isPresent()) {
-            throw new VotoNotFoundException();
-        }
-        voteRepository.delete(votoById.get());
-    }
     @Override
     public void deleteByPautaId(Long id) {
         Optional<List<Vote>> votos = voteRepository.findByPautaId(id);

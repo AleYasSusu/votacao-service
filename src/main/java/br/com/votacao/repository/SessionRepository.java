@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface SessaoRepository extends JpaRepository<Session, Long> {
+public interface SessionRepository extends JpaRepository<Session, Long> {
     Optional<Session> findByIdAndPautaId(Long id, Long pautaId);
 
     Long countByPautaId(Long id);

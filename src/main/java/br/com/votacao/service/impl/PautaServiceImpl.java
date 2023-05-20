@@ -8,27 +8,30 @@ import br.com.votacao.service.SessionService;
 import br.com.votacao.service.VoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class PautaServiceImpl implements PautaService {
 
-    private final PautaRepository pautaRepository;
+    private  PautaRepository pautaRepository;
+    private SessionService sessaoService;
+    private VoteService voteService;
 
     @Autowired
     public PautaServiceImpl(PautaRepository pautaRepository,
-                            SessionService sessaoService,
-                            VoteService voteServiceImpl) {
+                            @Lazy SessionService sessaoService,
+                            @Lazy VoteService voteService) {
         this.pautaRepository = pautaRepository;
         this.sessaoService = sessaoService;
-        this.voteServiceImpl = voteServiceImpl;
+        this.voteService = voteService;
     }
 
-    private final SessionService sessaoService;
-    private final VoteService voteServiceImpl;
+
 
     @Override
     public List<Pauta> findAllPautas() {
@@ -42,13 +45,9 @@ public class PautaServiceImpl implements PautaService {
 
     @Override
     public void delete(Long id) {
-        Optional<Pauta> pautaById = pautaRepository.findById(id);
-        if (!pautaById.isPresent()) {
-            throw new PautaNotFoundException();
-        }
-        pautaRepository.delete(pautaById.get());
-        sessaoService.deleteByPautaId(id);
-        voteServiceImpl.deleteByPautaId(id);
+        var staffById = pautaRepository.findById(id)
+                .orElseThrow(PautaNotFoundException::new);
+        pautaRepository.delete(staffById);
     }
 
     @Override

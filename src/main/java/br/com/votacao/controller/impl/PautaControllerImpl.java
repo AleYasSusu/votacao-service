@@ -3,17 +3,19 @@ package br.com.votacao.controller.impl;
 import br.com.votacao.controller.PautaController;
 import br.com.votacao.model.Pauta;
 import br.com.votacao.service.PautaService;
-import lombok.AllArgsConstructor;
+
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
 
 import javax.validation.Valid;
 import java.util.List;
 
 @RestController
 @RequestMapping("v1/pautas")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class PautaControllerImpl implements PautaController {
 
 	private final PautaService pautaService;

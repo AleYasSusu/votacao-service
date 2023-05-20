@@ -1,79 +1,70 @@
 package br.com.votacao.service.impl;
 
-import br.com.votacao.exception.PautaNotFoundException;
 import br.com.votacao.exception.SessaoNotFoundException;
 import br.com.votacao.model.Pauta;
 import br.com.votacao.model.Session;
-import br.com.votacao.repository.SessaoRepository;
-import br.com.votacao.service.PautaService;
+import br.com.votacao.repository.SessionRepository;
 import br.com.votacao.service.SessionService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class SessionServiceImpl implements SessionService {
 
-    private final SessaoRepository sessaoRepository;
-
-    private final PautaService pautaService;
-
-    @Autowired
-    public SessionServiceImpl(SessaoRepository sessaoRepository, PautaService pautaService) {
-        this.sessaoRepository = sessaoRepository;
-        this.pautaService = pautaService;
-    }
+    private static final long DEFAULT_DURATION_MINUTES = 1;
+    private final SessionRepository sessionRepository;
 
     @Override
     public List<Session> findAll() {
-        return sessaoRepository.findAll();
+        return sessionRepository.findAll();
     }
 
     @Override
-    public Session createSession(Long id, Session session) {
-        Pauta pauta = pautaService.findById(id);
-        if (pauta == null) {
-            throw new PautaNotFoundException();
-        }
-        session.setPauta(pauta);
-        return save(session);
+    public Session createSession(Pauta pauta, Long minutosValidade) {
+        LocalDateTime dataInicio = LocalDateTime.now();
+        Long duracaoMinutos = minutosValidade != null ? minutosValidade : DEFAULT_DURATION_MINUTES;
+
+       var session =  Session.builder()
+                .dataInicio(dataInicio)
+                .minutosValidade(duracaoMinutos)
+                .pauta(pauta)
+                .build();
+
+        return sessionRepository.save(session);
     }
 
-    private Session save(final Session session) {
-        session.setDataInicio(session.getDataInicio() == null ? LocalDateTime.now() : session.getDataInicio());
-        session.setMinutosValidade(session.getMinutosValidade() == null ? 1L : session.getMinutosValidade());
-        return sessaoRepository.save(session);
-    }
 
     @Override
     public void delete(Long id) {
-        if (!sessaoRepository.existsById(id)) {
+        if (!sessionRepository.existsById(id)) {
             throw new SessaoNotFoundException();
         }
-        sessaoRepository.deleteById(id);
+        sessionRepository.deleteById(id);
     }
 
     @Override
     public void deleteByPautaId(Long id) {
-        sessaoRepository.deleteByPautaId(id);
+        sessionRepository.deleteByPautaId(id);
     }
 
     @Override
     public Session findById(Long id) {
-        return sessaoRepository.findById(id)
+        return sessionRepository.findById(id)
                 .orElseThrow(SessaoNotFoundException::new);
     }
 
     @Override
     public Session findByIdAndPautaId(Long idSessao, Long pautaId) {
-        return sessaoRepository.findByIdAndPautaId(idSessao, pautaId)
+        return sessionRepository.findByIdAndPautaId(idSessao, pautaId)
                 .orElseThrow(SessaoNotFoundException::new);
     }
 
     @Override
-    public Long countSessoesByPautaId(Long pautaId) {
-        return sessaoRepository.countByPautaId(pautaId);
+    public Long countSessionByPautaId(Long pautaId) {
+        return sessionRepository.countByPautaId(pautaId);
     }
 }

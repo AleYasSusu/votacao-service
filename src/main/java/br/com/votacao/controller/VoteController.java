@@ -39,13 +39,4 @@ public interface VoteController {
     )
     List<Vote> findVotoBySessaoId(@PathVariable Long id);
 
-    @Operation(
-            summary = "DELETE Vote REST API",
-            description = "Delete Vote REST API is used to delete a particular vote from the database"
-    )
-    @ApiResponse(
-            responseCode = "200",
-            description = "HTTP Status 200 SUCESS"
-    )
-    void delete(@PathVariable Long id);
 }

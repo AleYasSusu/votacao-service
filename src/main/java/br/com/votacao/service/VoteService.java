@@ -10,15 +10,13 @@ public interface VoteService {
 
     Vote findById(Long id);
 
-    void initialize();
-
     List<Vote> findAll();
 
     Vote createNewVote(Long idPauta, Long idSessao, Vote voto);
 
-    List<Vote> findVotosByPautaId(Long id);
+    void cpfAbleToVote(Vote vote);
 
-    void delete(Long id);
+    List<Vote> findVotosByPautaId(Long id);
 
     void deleteByPautaId(Long id);
 
