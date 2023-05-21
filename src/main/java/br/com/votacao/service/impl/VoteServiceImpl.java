@@ -34,10 +34,8 @@ public class VoteServiceImpl implements VoteService {
     private final RestTemplate restTemplate;
     @Lazy
     private final SessionService sessionService;
-    @Lazy
-    private final VotingService votingService;
     @Value("${app.integracao.cpf.url}")
-    private String urlCpfValidator = "";
+    private String urlCpfValidator;
 
 
     @Override

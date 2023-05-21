@@ -10,6 +10,6 @@ RUN mvn -f /home/app/pom.xml install -Dmaven.test.skip=true
 # Package stage
 #
 FROM openjdk:11-jre-slim
-COPY --from=build /home/app/target/avaliacao-0.0.1-SNAPSHOT.jar /usr/local/lib/avaliacao.jar
+COPY --from=build /home/app/target/votacao-service-0.0.1-SNAPSHOT.jar /usr/local/lib/votacao-service.jar
 EXPOSE 8085
-ENTRYPOINT ["java","-jar","/usr/local/lib/avaliacao.jar"]
+ENTRYPOINT ["java","-jar","/usr/local/lib/votacao-service.jar"]
