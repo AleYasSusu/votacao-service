@@ -9,14 +9,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         temp:
         use_jdbc_metadata_defaults: false
-    database-platform : org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
   datasource:
-    url: jdbc:postgresql://${DATABASE_URL}/${DATABASE_NAME}?createDatabaseIfNotExist=true
-    driverClassName : org.postgresql.Driver
+    url: jdbc:postgresql://${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?createDatabaseIfNotExist=true
+    driver-class-name: org.postgresql.Driver
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
-    hikari:
-      connection-timeout: 30000
-      maximum-pool-size: 1
-
-    maxActive: 1
+  hikari:
+    connection-timeout: 30000
+    maximum-pool-size: 1
