@@ -11,7 +11,7 @@ spring:
         use_jdbc_metadata_defaults: false
     database-platform : org.hibernate.dialect.PostgreSQLDialect
   datasource:
-    url: jdbc:postgresql://${DATABASE_URL}/${DATABASE_NAME}
+    url: jdbc:postgresql://${DATABASE_URL}/${DATABASE_NAME}/votacao-servicedb?createDatabaseIfNotExist=true
     driverClassName : org.postgresql.Driver
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
