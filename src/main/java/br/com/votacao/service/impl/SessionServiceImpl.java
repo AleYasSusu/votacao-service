@@ -1,6 +1,6 @@
 package br.com.votacao.service.impl;
 
-import br.com.votacao.exception.SessaoNotFoundException;
+import br.com.votacao.exception.SessionNotFoundException;
 import br.com.votacao.model.Pauta;
 import br.com.votacao.model.Session;
 import br.com.votacao.repository.SessionRepository;
@@ -41,7 +41,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public void delete(Long id) {
         if (!sessionRepository.existsById(id)) {
-            throw new SessaoNotFoundException();
+            throw new SessionNotFoundException();
         }
         sessionRepository.deleteById(id);
     }
@@ -54,13 +54,13 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public Session findById(Long id) {
         return sessionRepository.findById(id)
-                .orElseThrow(SessaoNotFoundException::new);
+                .orElseThrow(SessionNotFoundException::new);
     }
 
     @Override
     public Session findByIdAndPautaId(Long idSessao, Long pautaId) {
         return sessionRepository.findByIdAndPautaId(idSessao, pautaId)
-                .orElseThrow(SessaoNotFoundException::new);
+                .orElseThrow(SessionNotFoundException::new);
     }
 
     @Override
