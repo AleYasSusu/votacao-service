@@ -3,16 +3,11 @@
 
 ### SWAGGER
 ```
-http://localhost:8081/swagger-ui.html
+http://ec2-3-89-88-97.compute-1.amazonaws.com:8085/swagger-ui.html
+
+http://3.89.88.97:8085/swagger-ui.html
 ```
 
-### ACTUATOR
-```
-http://localhost:8081/actuator
-```
-```
-http://localhost:8080/actuator/health
-```
 
 ## Desenvolvido com:
 
@@ -23,10 +18,9 @@ http://localhost:8080/actuator/health
 * [Maven](https://maven.apache.org/) - Dependency Management
 * [PostgreSQL](https://www.postgresql.org/) - PostgreSQL
 * [Swagger](https://swagger.io/docs/) - The API design framework
-* [Kafka](https://kafka.apache.org/) - Apache Kafka
 
 
 ## Autores
 
-* **Alessandro Borges de Souza** - *Initial work* - [AleYasSusu](https://github.com/AleYasSusu/votacao-service.git)
+* **Alessandro Borges de Souza** - *Initial work* - [AleYasSusu](https://github.com/AleYasSusu/votacao-service)
 
