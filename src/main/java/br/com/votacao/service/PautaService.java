@@ -9,7 +9,6 @@ public interface PautaService {
 
     Pauta createNewPauta(Pauta pauta);
 
-    void delete(Long id);
 
     Pauta findById(Long id);
 }

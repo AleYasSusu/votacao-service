@@ -4,10 +4,11 @@ import br.com.votacao.model.Pauta;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 
-import javax.validation.Valid;
+
 import java.util.List;
 
 public interface PautaController {
@@ -41,13 +42,4 @@ public interface PautaController {
     )
     Pauta findById(@PathVariable Long id);
 
-    @Operation(
-            summary = "DELETE Pauta REST API",
-            description = "Delete Pauta REST API is used to delete a particular pauta from the database"
-    )
-    @ApiResponse(
-            responseCode = "200",
-            description = "HTTP Status 200 SUCESS"
-    )
-    void delete(@PathVariable Long id);
 }

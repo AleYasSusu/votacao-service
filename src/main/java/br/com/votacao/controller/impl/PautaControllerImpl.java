@@ -5,12 +5,12 @@ import br.com.votacao.model.Pauta;
 import br.com.votacao.service.PautaService;
 
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 
-import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -41,10 +41,4 @@ public class PautaControllerImpl implements PautaController {
 		return pautaService.findById(id);
 	}
 
-	@Override
-	@DeleteMapping("/{id}")
-	@ResponseStatus(code = HttpStatus.OK)
-	public void delete(@PathVariable Long id) {
-		pautaService.delete(id);
-	}
 }

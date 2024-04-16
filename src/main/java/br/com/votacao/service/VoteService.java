@@ -1,26 +1,12 @@
 package br.com.votacao.service;
 
 
-import br.com.votacao.model.Vote;
-
-import java.util.List;
-import java.util.Optional;
+import br.com.votacao.dto.VotacaoResultadoDTO;
+import br.com.votacao.dto.VoteRequestDTO;
 
 public interface VoteService {
 
-    Vote findById(Long id);
+    void receiveVote(VoteRequestDTO voteRequest);
 
-    List<Vote> findAll();
-
-    Vote createNewVote(Long idPauta, Long idSessao, Vote voto);
-
-    void cpfAbleToVote(Vote vote);
-
-    List<Vote> findVotosByPautaId(Long id);
-
-    void deleteByPautaId(Long id);
-
-    Optional<Vote> findByCpf(String cpf);
-
-    Optional<List<Vote>> findByPautaId(Long id);
+    String getResultadoVotacaoPauta(Long sessionId);
 }

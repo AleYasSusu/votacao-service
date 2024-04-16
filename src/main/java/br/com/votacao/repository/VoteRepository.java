@@ -9,9 +9,8 @@ import java.util.Optional;
 
 @Repository
 public interface VoteRepository extends JpaRepository<Vote, Long> {
-    Optional<Vote> findByCpf(String cpf);
 
-    Optional<List<Vote>> findByPautaId(Long id);
+    boolean existsByCpfAndSessionId(String cpf, Long sessionId);
 
-    Optional<Vote> findByCpfAndPautaId(String cpf, Long id);
+    List<Vote> findBySessionId(Long sessionId);
 }

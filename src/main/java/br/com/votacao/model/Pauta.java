@@ -1,9 +1,10 @@
 package br.com.votacao.model;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
+
 import java.io.Serializable;
 
 @Entity
@@ -22,4 +23,7 @@ public class Pauta implements Serializable {
 
     @NotBlank(message = "pauta-1")
     private String nome;
+
+    public Pauta(Long pautaId) {
+    }
 }

@@ -1,10 +1,11 @@
 package br.com.votacao.model;
 
 
+import jakarta.persistence.*;
 import lombok.*;
 
 
-import javax.persistence.*;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -26,11 +27,8 @@ public class Session implements Serializable {
 
     private Long minutosValidade;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
+    @JoinColumn(name = "pauta_id")
     private Pauta pauta;
 
-    public Session pauta(Pauta pauta) {
-        this.pauta = pauta;
-        return this;
-    }
 }

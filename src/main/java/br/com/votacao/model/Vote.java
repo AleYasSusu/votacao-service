@@ -2,12 +2,12 @@ package br.com.votacao.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import jakarta.persistence.*;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-
-import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 @Entity
@@ -28,11 +28,11 @@ public class Vote implements Serializable {
     private String cpf;
 
     @NotNull(message = "voto-2")
-    private Boolean escolha;
+    private String escolha;
 
     @NotNull(message = "voto-3")
     @ManyToOne(fetch = FetchType.EAGER)
-    private Pauta pauta;
+    private Session session;
 
     @JsonIgnore
     public boolean isNew() {

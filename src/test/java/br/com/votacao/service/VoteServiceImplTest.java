@@ -37,59 +37,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VoteServiceImplTest {
-    @InjectMocks
-    private VoteServiceImpl voteService;
-    @Mock
-    private VoteRepository votoRepository;
-    @Mock
-    private RestTemplate restTemplate;
-    @Mock
-    private VotingService votacaoService;
-    @Mock
-    private SessionService sessaoService;
 
-    @Before
-    public void setup() {
-        MockitoAnnotations.initMocks(this);
 
-    }
 
-    @Test(expected = SessionTimeOutException.class)
-    public void verifyVotoTest() {
-        Session session = new Session();
-        session.setDataInicio(LocalDateTime.now());
-        session.setMinutosValidade(-1L);
-
-        Vote voto = new Vote();
-        Pauta pauta = new Pauta();
-        pauta.setId(1L);
-        voto.setPauta(pauta);
-
-        when(votacaoService.buildVotingPauta(anyLong())).thenReturn(VotingDto.builder().build());
-
-        voteService.verifyVote(session, voto);
-    }
-
-    @Test(expected = VoteAlreadyExistsException.class)
-    public void votoAlreadyExistsTest() {
-        Vote voto = new Vote();
-        voto.setCpf("1234");
-        Pauta pauta = new Pauta();
-        pauta.setId(1L);
-        voto.setPauta(pauta );
-        when(votoRepository.findByCpfAndPautaId(anyString(), anyLong())).thenReturn(Optional.of(new Vote()));
-        voteService.voteAlreadyExists(voto);
-    }
-
-    @Test
-    public void votoAlreadyExistssTest() {
-        Vote vote = new Vote();
-        vote.setCpf("1234");
-        Pauta pauta = new Pauta();
-        pauta.setId(1L);
-        vote.setPauta(pauta );
-
-        when(votoRepository.findByCpfAndPautaId(anyString(), anyLong())).thenReturn(Optional.empty());
-        voteService.voteAlreadyExists(vote);
-    }
 }

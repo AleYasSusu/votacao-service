@@ -6,17 +6,8 @@ import br.com.votacao.model.Session;
 import java.util.List;
 
 public interface SessionService {
-    List<Session> findAll();
 
-    Session createSession(Pauta pauta, Long minutosValidade);
-
-    void delete(Long id);
-
-    void deleteByPautaId(Long id);
+    Session abrirSessaoDeVotacao(Long pautaId, Long minutosValidade);
 
     Session findById(Long id);
-
-    Session findByIdAndPautaId(Long idSessao, Long pautaId);
-
-    Long countSessionByPautaId(Long pautaId);
 }

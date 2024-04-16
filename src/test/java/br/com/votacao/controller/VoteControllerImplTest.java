@@ -67,51 +67,6 @@ public class VoteControllerImplTest {
     }
 
 
-    @Test
-    public void findVotoBySessaoId_ValidId_ReturnsList() {
-        // Arrange
-        Long id = 1L;
-        List<Vote> expectedVotes = new ArrayList<>();
-        when(voteService.findVotosByPautaId(id)).thenReturn(expectedVotes);
 
-        // Act
-        List<Vote> result = voteService.findVotosByPautaId(id);
-
-        // Assert
-        verify(voteService, times(1)).findVotosByPautaId(id);
-        assertEquals(expectedVotes, result);
-    }
-
-    @Test
-    public void findVotoById_ValidId_ReturnsVote() {
-        // Arrange
-        Long id = 1L;
-        Vote expectedVote = new Vote();
-        when(voteService.findById(id)).thenReturn(expectedVote);
-
-        // Act
-        Vote result = voteService.findById(id);
-
-        // Assert
-        verify(voteService, times(1)).findById(id);
-        assertEquals(expectedVote, result);
-    }
-
-    @Test
-    public void createNewVote_ValidParameters_ReturnsVote() {
-        // Arrange
-        Long idPauta = 1L;
-        Long idSessao = 2L;
-        Vote voto = new Vote();
-        Vote expectedVote = new Vote();
-        when(voteService.createNewVote(idPauta, idSessao, voto)).thenReturn(expectedVote);
-
-        // Act
-        Vote result = voteService.createNewVote(idPauta, idSessao, voto);
-
-        // Assert
-        verify(voteService, times(1)).createNewVote(idPauta, idSessao, voto);
-        assertEquals(expectedVote, result);
-    }
 }
 

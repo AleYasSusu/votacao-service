@@ -1,13 +1,14 @@
 package br.com.votacao.controller.impl;
 
 import br.com.votacao.controller.VoteController;
-import br.com.votacao.model.Vote;
+import br.com.votacao.dto.VotacaoResultadoDTO;
+import br.com.votacao.dto.VoteRequestDTO;
+import br.com.votacao.exception.UnableCpfException;
 import br.com.votacao.service.VoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("v1/votes")
@@ -16,31 +17,24 @@ public class VoteControllerImpl implements VoteController {
 
 	private final VoteService voteService;
 
-	@GetMapping
-	@ResponseStatus(code = HttpStatus.OK)
-	public List<Vote> findAll() {
-		return voteService.findAll();
+	@PostMapping("/votes")
+	public ResponseEntity<String> receiveVote(@RequestBody VoteRequestDTO voteRequest) {
+		try {
+			voteService.receiveVote(voteRequest);
+			return ResponseEntity.ok("Voto registrado com sucesso.");
+		} catch (IllegalStateException | UnableCpfException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+		}
 	}
 
-	@Override
-	@PostMapping("/pautas/{idPauta}/sessions/{idSessao}")
-	@ResponseStatus(code = HttpStatus.CREATED)
-	public Vote createNewVote(Long idPauta, Long idSessao, Vote voto) {
-		return voteService.createNewVote(idPauta, idSessao, voto);
+	@GetMapping("/voting/result/pauta/{sessionId}")
+	public String getVotingResultPauta(@PathVariable Long sessionId) {
+		return voteService.getResultadoVotacaoPauta(sessionId);
 	}
-
-	@Override
-	@GetMapping("{id}")
-	@ResponseStatus(code = HttpStatus.OK)
-	public Vote findVotoById(@PathVariable Long id) {
-		return voteService.findById(id);
-	}
-
-	@Override
-	@GetMapping("/pautas/{id}")
-	@ResponseStatus(code = HttpStatus.OK)
-	public List<Vote> findVotoBySessaoId(@PathVariable Long id) {
-		return voteService.findVotosByPautaId(id);
-	}
-
 }
+
+
+
+
+
+

@@ -1,42 +1,32 @@
 package br.com.votacao.controller;
 
-import br.com.votacao.model.Vote;
+import br.com.votacao.dto.VoteRequestDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 public interface VoteController {
 
     @Operation(
-            summary = "Create Vote REST API",
-            description = "Create Vote REST API is used to save vote in database"
-    )
-    @ApiResponse(
-            responseCode = "201",
-            description = "HTTP Status 201 CREATED"
-    )
-    Vote createNewVote(@PathVariable Long idPauta, @PathVariable Long idSessao, @RequestBody Vote voto);
-
-    @Operation(
-            summary = "Find Vote",
-            description = "Get Vote by ID REST API is used to get single vote from the database"
+            summary = "Get ALL Pautas REST API",
+            description = "Get ALL Pautas REST API is used to get all pautas from the database"
     )
     @ApiResponse(
             responseCode = "200",
             description = "HTTP Status 200 SUCESS"
     )
-    Vote findVotoById(@PathVariable Long id);
+    ResponseEntity<String> receiveVote(@RequestBody @Valid VoteRequestDTO requestDTO);
 
     @Operation(
-            summary = "Find Vote por session",
-            description = "Get Vote by Session ID is used to get votes from a single session in the database."
+            summary = "Get ALL Pautas REST API",
+            description = "Get ALL Pautas REST API is used to get all pautas from the database"
     )
     @ApiResponse(
             responseCode = "200",
             description = "HTTP Status 200 SUCESS"
     )
-    List<Vote> findVotoBySessaoId(@PathVariable Long id);
+    String getVotingResultPauta(@PathVariable Long sessionId);
 
 }

@@ -1,150 +1,114 @@
 package br.com.votacao.service.impl;
 
-import br.com.votacao.domain.CpfValidationDto;
+import br.com.votacao.client.CPFServiceClient;
+import br.com.votacao.dto.VoteRequestDTO;
 import br.com.votacao.exception.*;
+import br.com.votacao.model.Pauta;
 import br.com.votacao.model.Session;
 import br.com.votacao.model.Vote;
 import br.com.votacao.repository.VoteRepository;
 import br.com.votacao.service.SessionService;
-import br.com.votacao.service.VoteService;                                                                                          
+import br.com.votacao.service.VoteService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class VoteServiceImpl implements VoteService {
-
-    private static final String CPF_NOT_ABLE_TO_VOTE = "UNABLE_TO_VOTE";
     private final VoteRepository voteRepository;
-    private final RestTemplate restTemplate;
-    @Lazy
     private final SessionService sessionService;
-    @Value("${app.integracao.cpf.url}")
-    private String urlCpfValidator;
-
+    //private final CPFServiceClient cpfServiceClient;
 
     @Override
-    public Vote findById(Long id) {
-        Optional<Vote> findById = voteRepository.findById(id);
-        if (findById.isEmpty()) {
-            throw new VoteNotFoundException();
-        }
-        return findById.get();
+    public void receiveVote(VoteRequestDTO voteRequest) {
+        verifySessionValidity(voteRequest.getSessionId());
+        verifyVotingAbility(voteRequest.getCpf());
+
+        boolean escolha = parseEscolha(voteRequest.getEscolha());
+
+        verifyVoterAlreadyVoted(voteRequest.getCpf(), voteRequest.getSessionId());
+
+        saveVote(voteRequest.getCpf(), escolha, voteRequest.getSessionId());
     }
 
-    @Override
-    public List<Vote> findAll() {
-        return voteRepository.findAll();
-    }
-
-
-    @Override
-    public Vote createNewVote(Long idPauta, Long idSessao, Vote voto) {
-        Session session = sessionService.findByIdAndPautaId(idSessao, idPauta);
-        if (!idPauta.equals(session.getPauta().getId())) {
-            throw new InvalidSessionException();
-        }
-        voto.setPauta(session.getPauta());
-        return saveAndVerify(session, voto);
-    }
-
-    public Vote saveAndVerify(final Session session, final Vote voto) {
-        verifyVote(session, voto);
-        return voteRepository.save(voto);
-    }
-
-    public void verifyVote(final Session session, final Vote vote) {
-        LocalDateTime dataLimite = session.getDataInicio().plusMinutes(session.getMinutosValidade());
-        if (LocalDateTime.now().isAfter(dataLimite)) {
-            throw new SessionTimeOutException();
-        }
-        cpfAbleToVote(vote);
-        voteAlreadyExists(vote);
-    }
-
-    public void voteAlreadyExists(final Vote vote) {
-        Optional<Vote> voteByCpfAndPauta = voteRepository
-                .findByCpfAndPautaId(vote.getCpf(), vote.getPauta().getId());
-        if (voteByCpfAndPauta.isPresent()) {
-            throw new VoteAlreadyExistsException();
+    private void verifySessionValidity(Long sessionId) {
+        Session session = sessionService.findById(sessionId);
+        LocalDateTime currentTime = LocalDateTime.now();
+        LocalDateTime sessionEndTime = session.getDataInicio().plusMinutes(session.getMinutosValidade());
+        if (currentTime.isBefore(session.getDataInicio()) || currentTime.isAfter(sessionEndTime)) {
+            throw new SessionTimeOutException("Sessão de votação não está aberta ou expirou.");
         }
     }
 
+    private void verifyVotingAbility(String cpf) {
+        //String votingAbility = cpfServiceClient.checkVotingAbility(cpf);
+        String votingAbility = MockCPFServiceClient.checkVotingAbility(cpf);
+        if (!votingAbility.equals("ABLE_TO_VOTE")) {
+            throw new UnableCpfException("Associado não está habilitado para votar.");
+        }
+        if (!"ABLE_TO_VOTE".equals(votingAbility)) {
+            throw new UnableCpfException("Associado não está habilitado para votar.");
+        }
+    }
+
+    private boolean parseEscolha(String escolha) {
+        if ("Sim".equalsIgnoreCase(escolha)) {
+            return true;
+        } else if ("Não".equalsIgnoreCase(escolha)) {
+            return false;
+        } else {
+            throw new IllegalArgumentException("Escolha inválida. A escolha deve ser 'Sim' ou 'Não'.");
+        }
+    }
+
+    private void verifyVoterAlreadyVoted(String cpf, Long sessionId) {
+        if (voteRepository.existsByCpfAndSessionId(cpf, sessionId)) {
+            throw new VoteAlreadyExistsException("Associado já votou nesta sessão.");
+        }
+    }
+
+    private void saveVote(String cpf, boolean escolha, Long sessionId) {
+        Vote vote = new Vote();
+        vote.setCpf(cpf);
+        vote.setEscolha(String.valueOf(escolha));
+        vote.setSession(sessionService.findById(sessionId));
+        voteRepository.save(vote);
+    }
+
     @Override
-    public void cpfAbleToVote(Vote vote) {
-        try {
-            var cpfValidation = getCpfValidation(vote);
-            if (HttpStatus.OK.equals(cpfValidation.getStatusCode())) {
-                if (isCpfNotAbleToVote(cpfValidation)) {
-                    throw new UnableCpfException("CPF não está habilitado para votar");
-                }
+    public String getResultadoVotacaoPauta(Long sessionId) {
+        List<Vote> votes = voteRepository.findBySessionId(sessionId);
+        if (votes.isEmpty()) {
+            throw new VoteNotFoundException("Não foram encontrados votos para a sessão com ID: " + sessionId);
+        }
+
+        Session session = votes.get(0).getSession();
+        Pauta pauta = session.getPauta();
+
+        int yesVotes = 0;
+        int noVotes = 0;
+
+        for (Vote vote : votes) {
+            if (Boolean.parseBoolean(vote.getEscolha())) {
+                yesVotes++;
             } else {
-                throw new InvalidCpfException();
+                noVotes++;
             }
-        } catch (CpfValidationException e) {
-            throw new UnableCpfException("Erro na validação do CPF", e);
-        }
-    }
-
-    private boolean isCpfNotAbleToVote(ResponseEntity<CpfValidationDto> cpfValidation) {
-        return CPF_NOT_ABLE_TO_VOTE.equalsIgnoreCase(Objects.requireNonNull(cpfValidation.getBody()).getStatus());
-    }
-
-    private ResponseEntity<CpfValidationDto> getCpfValidation(final Vote voto) {
-        String cpfUrl = "/" + voto.getCpf();
-        URI uri = UriComponentsBuilder.fromUriString(urlCpfValidator)
-                .path(cpfUrl)
-                .build()
-                .toUri();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-        HttpEntity<String> entity = new HttpEntity<>(headers);
-
-        try {
-            return restTemplate.exchange(uri, HttpMethod.GET, entity, CpfValidationDto.class);
-        } catch (RestClientException e) {
-            throw new CpfValidationException("Erro ao obter validação do CPF", e);
-        }
-    }
-
-    @Override
-    public List<Vote> findVotosByPautaId(Long id) {
-        Optional<List<Vote>> findByPautaId = voteRepository.findByPautaId(id);
-
-        if (findByPautaId.isEmpty()) {
-            throw new VoteNotFoundException();
         }
 
-        return findByPautaId.get();
-    }
+        String resultado;
+        if (yesVotes > noVotes) {
+            resultado = "aprovada";
+        } else if (noVotes > yesVotes) {
+            resultado = "desaprovada";
+        } else {
+            resultado = "empatada";
+        }
 
-    @Override
-    public void deleteByPautaId(Long id) {
-        Optional<List<Vote>> votos = voteRepository.findByPautaId(id);
-        votos.ifPresent(voteRepository::deleteAll);
-    }
-
-    @Override
-    public Optional<Vote> findByCpf(String cpf) {
-        return voteRepository.findByCpf(cpf);
-    }
-
-    @Override
-    public Optional<List<Vote>> findByPautaId(Long id) {
-        return voteRepository.findByPautaId(id);
+        return "A pauta '" + pauta.getNome() + "' teve um total de " + yesVotes + " votos 'Sim' e um total de "
+                + noVotes + " votos 'Não', então ela está " + resultado + ".";
     }
 }

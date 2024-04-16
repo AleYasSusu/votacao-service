@@ -1,5 +1,6 @@
 package br.com.votacao.service.impl;
 
+
 import br.com.votacao.exception.SessionNotFoundException;
 import br.com.votacao.model.Pauta;
 import br.com.votacao.model.Session;
@@ -9,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor
@@ -19,52 +20,30 @@ public class SessionServiceImpl implements SessionService {
     private final SessionRepository sessionRepository;
 
     @Override
-    public List<Session> findAll() {
-        return sessionRepository.findAll();
+    public Session abrirSessaoDeVotacao(Long pautaId, Long minutosValidade) {
+        LocalDateTime dataInicio = LocalDateTime.now();
+        Long duracaoMinutos = minutosValidade != null && minutosValidade > 0 ? minutosValidade : DEFAULT_DURATION_MINUTES;
+
+        return saveDesssion(pautaId, dataInicio, duracaoMinutos);
     }
 
-    @Override
-    public Session createSession(Pauta pauta, Long minutosValidade) {
-        LocalDateTime dataInicio = LocalDateTime.now();
-        Long duracaoMinutos = minutosValidade != null ? minutosValidade : DEFAULT_DURATION_MINUTES;
+    private Session saveDesssion(Long pautaId, LocalDateTime dataInicio, Long duracaoMinutos) {
+        Pauta pauta = new Pauta();
+        pauta.setId(pautaId);
 
-       var session =  Session.builder()
-                .dataInicio(dataInicio)
-                .minutosValidade(duracaoMinutos)
-                .pauta(pauta)
+        Session.SessionBuilder builder = Session.builder();
+        builder.dataInicio(dataInicio);
+        builder.minutosValidade(duracaoMinutos);
+        builder.pauta(pauta);
+        Session session = builder
                 .build();
 
         return sessionRepository.save(session);
-    }
-
-
-    @Override
-    public void delete(Long id) {
-        if (!sessionRepository.existsById(id)) {
-            throw new SessionNotFoundException();
-        }
-        sessionRepository.deleteById(id);
-    }
-
-    @Override
-    public void deleteByPautaId(Long id) {
-        sessionRepository.deleteByPautaId(id);
     }
 
     @Override
     public Session findById(Long id) {
         return sessionRepository.findById(id)
                 .orElseThrow(SessionNotFoundException::new);
-    }
-
-    @Override
-    public Session findByIdAndPautaId(Long idSessao, Long pautaId) {
-        return sessionRepository.findByIdAndPautaId(idSessao, pautaId)
-                .orElseThrow(SessionNotFoundException::new);
-    }
-
-    @Override
-    public Long countSessionByPautaId(Long pautaId) {
-        return sessionRepository.countByPautaId(pautaId);
     }
 }
