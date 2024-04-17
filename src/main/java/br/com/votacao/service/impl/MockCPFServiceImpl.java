@@ -1,9 +1,14 @@
 package br.com.votacao.service.impl;
 
+
+import br.com.votacao.service.MockCpfService;
+import org.springframework.stereotype.Service;
+
 import java.util.HashMap;
 import java.util.Map;
 
-public class MockCPFServiceClient {
+@Service
+public class MockCPFServiceImpl implements MockCpfService {
     private static final Map<String, String> cpfStatusMap = new HashMap<>();
 
     static {
@@ -17,14 +22,19 @@ public class MockCPFServiceClient {
         cpfStatusMap.put("48105049058", "ABLE_TO_VOTE");
         cpfStatusMap.put("92997746094", "ABLE_TO_VOTE");
 
-        // Configurar o status para os CPFs inválidos
-        cpfStatusMap.put("24491147000", "UNABLE_TO_VOTE");
-        cpfStatusMap.put("57146047091", "UNABLE_TO_VOTE");
-        // Outros CPFs inválidos...
+
+        //cpfs invalidos para voto
+        cpfStatusMap.put("69750936019", "UNABLE_TO_VOTE");
+        cpfStatusMap.put("27721533040", "UNABLE_TO_VOTE");
+        cpfStatusMap.put("29794690090", "UNABLE_TO_VOTE");
+        cpfStatusMap.put("45852616052", "UNABLE_TO_VOTE");
+        cpfStatusMap.put("88115408018", "UNABLE_TO_VOTE");
+        cpfStatusMap.put("86100647001", "UNABLE_TO_VOTE");
+
     }
 
-    public static String checkVotingAbility(String cpf) {
-        // Simular a resposta do serviço externo com base no CPF fornecido
+    @Override
+    public String checkVotingAbility(String cpf) {
         return cpfStatusMap.getOrDefault(cpf, "UNABLE_TO_VOTE");
     }
 }

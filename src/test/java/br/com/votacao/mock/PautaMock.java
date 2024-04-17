@@ -6,7 +6,7 @@ public class PautaMock {
     public static Pauta buildPauta(){
         return Pauta.builder()
                 .id(1L)
-                .nome("teste ti")
+                .nome("Aprovaçao no desafio Técnico")
                 .build();
     }
 }

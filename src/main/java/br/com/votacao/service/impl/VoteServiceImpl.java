@@ -1,12 +1,17 @@
 package br.com.votacao.service.impl;
 
-import br.com.votacao.client.CPFServiceClient;
+
+import br.com.votacao.exception.SessionTimeOutException;
+import br.com.votacao.exception.UnableCpfException;
+import br.com.votacao.exception.VoteAlreadyExistsException;
+import br.com.votacao.exception.VoteNotFoundException;
+import br.com.votacao.repository.VoteRepository;
+import br.com.votacao.service.MockCpfService;
 import br.com.votacao.dto.VoteRequestDTO;
-import br.com.votacao.exception.*;
+
 import br.com.votacao.model.Pauta;
 import br.com.votacao.model.Session;
 import br.com.votacao.model.Vote;
-import br.com.votacao.repository.VoteRepository;
 import br.com.votacao.service.SessionService;
 import br.com.votacao.service.VoteService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +25,8 @@ import java.util.List;
 public class VoteServiceImpl implements VoteService {
     private final VoteRepository voteRepository;
     private final SessionService sessionService;
+    private final MockCpfService cpfServiceClient;
+
     //private final CPFServiceClient cpfServiceClient;
 
     @Override
@@ -45,28 +52,26 @@ public class VoteServiceImpl implements VoteService {
 
     private void verifyVotingAbility(String cpf) {
         //String votingAbility = cpfServiceClient.checkVotingAbility(cpf);
-        String votingAbility = MockCPFServiceClient.checkVotingAbility(cpf);
-        if (!votingAbility.equals("ABLE_TO_VOTE")) {
-            throw new UnableCpfException("Associado não está habilitado para votar.");
-        }
+        String votingAbility = cpfServiceClient.checkVotingAbility(cpf);
         if (!"ABLE_TO_VOTE".equals(votingAbility)) {
             throw new UnableCpfException("Associado não está habilitado para votar.");
         }
     }
 
     private boolean parseEscolha(String escolha) {
-        if ("Sim".equalsIgnoreCase(escolha)) {
+        if ("Sim".equalsIgnoreCase(escolha) || "S".equalsIgnoreCase(escolha)) {
             return true;
-        } else if ("Não".equalsIgnoreCase(escolha)) {
+        } else if ("Não".equalsIgnoreCase(escolha) || "Nao".equalsIgnoreCase(escolha) || "NÃO".equalsIgnoreCase(escolha)
+                || "NAO".equalsIgnoreCase(escolha) || "N".equalsIgnoreCase(escolha)) {
             return false;
         } else {
             throw new IllegalArgumentException("Escolha inválida. A escolha deve ser 'Sim' ou 'Não'.");
         }
     }
-
+    
     private void verifyVoterAlreadyVoted(String cpf, Long sessionId) {
         if (voteRepository.existsByCpfAndSessionId(cpf, sessionId)) {
-            throw new VoteAlreadyExistsException("Associado já votou nesta sessão.");
+            throw new VoteAlreadyExistsException("Já foi computado um Voto para está Pauta com este número deeste CPF.");
         }
     }
 
@@ -91,24 +96,29 @@ public class VoteServiceImpl implements VoteService {
         int yesVotes = 0;
         int noVotes = 0;
 
-        for (Vote vote : votes) {
-            if (Boolean.parseBoolean(vote.getEscolha())) {
-                yesVotes++;
-            } else {
-                noVotes++;
+
+        if (session.getMinutosValidade() == 0) {
+            for (Vote vote : votes) {
+                if (Boolean.parseBoolean(vote.getEscolha())) {
+                    yesVotes++;
+                } else {
+                    noVotes++;
+                }
             }
-        }
 
-        String resultado;
-        if (yesVotes > noVotes) {
-            resultado = "aprovada";
-        } else if (noVotes > yesVotes) {
-            resultado = "desaprovada";
+            String resultado;
+            if (yesVotes > noVotes) {
+                resultado = "aprovada";
+            } else if (noVotes > yesVotes) {
+                resultado = "desaprovada";
+            } else {
+                resultado = "empatada";
+            }
+
+            return "A pauta '" + pauta.getNome() + "' teve um total de " + yesVotes + " votos 'Sim' e um total de "
+                    + noVotes + " votos 'Não', então ela está " + resultado + ".";
         } else {
-            resultado = "empatada";
+            return "A votação para a pauta " + pauta.getNome() + " ainda está em andamento não possui resultado.";
         }
-
-        return "A pauta '" + pauta.getNome() + "' teve um total de " + yesVotes + " votos 'Sim' e um total de "
-                + noVotes + " votos 'Não', então ela está " + resultado + ".";
     }
 }

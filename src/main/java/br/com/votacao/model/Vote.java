@@ -1,7 +1,7 @@
 package br.com.votacao.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -20,18 +20,22 @@ import java.io.Serializable;
 @Table(name = "vote")
 public class Vote implements Serializable {
     @Id
-    @SequenceGenerator(name = "vote_seq", sequenceName = "svote_seq", allocationSize = 1)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "vote_seq")
+    @SequenceGenerator(name = "voto_seq", sequenceName = "voto_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "voto_seq")
+    @Schema(description = "ID do voto", example = "1")
     private Long id;
 
     @NotBlank(message = "voto-1")
+    @Schema(description = "CPF do votante", example = "12345678900")
     private String cpf;
 
     @NotNull(message = "voto-2")
+    @Schema(description = "Escolha do votante ('Sim' ou 'Não')", example = "Sim")
     private String escolha;
 
     @NotNull(message = "voto-3")
     @ManyToOne(fetch = FetchType.EAGER)
+    @Schema(description = "Sessão em que o voto foi registrado")
     private Session session;
 
     @JsonIgnore

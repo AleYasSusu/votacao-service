@@ -1,7 +1,6 @@
 package br.com.votacao.controller.impl;
 
 import br.com.votacao.controller.VoteController;
-import br.com.votacao.dto.VotacaoResultadoDTO;
 import br.com.votacao.dto.VoteRequestDTO;
 import br.com.votacao.exception.UnableCpfException;
 import br.com.votacao.service.VoteService;
@@ -17,13 +16,13 @@ public class VoteControllerImpl implements VoteController {
 
 	private final VoteService voteService;
 
-	@PostMapping("/votes")
+	@PostMapping
 	public ResponseEntity<String> receiveVote(@RequestBody VoteRequestDTO voteRequest) {
 		try {
 			voteService.receiveVote(voteRequest);
 			return ResponseEntity.ok("Voto registrado com sucesso.");
 		} catch (IllegalStateException | UnableCpfException e) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
 		}
 	}
 

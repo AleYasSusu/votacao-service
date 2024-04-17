@@ -1,0 +1,44 @@
+version: '3'
+
+networks:
+  votacao-net:
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: 'votacao-service-api'
+    ports:
+      - "8080:8080"
+    depends_on:
+      votacaodb:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://votacaodb:5432/votacaodb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=21030822
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+      - votacao-net
+
+
+  votacaodb:
+    image: postgres:13.1
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "user" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=21030822
+      - APP_DB_NAME=votacaodb
+    networks:
+      - votacao-net
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - 5432:5432
+

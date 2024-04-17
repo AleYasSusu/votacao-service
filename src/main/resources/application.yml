@@ -1,0 +1,19 @@
+spring:
+  jpa:
+    database: POSTGRESQL
+    show-sql: true
+    hibernate:
+      ddl-auto: create
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+      properties:
+        hibernate.temp.use_jdbc_metadata_defaults: false
+  datasource:
+    url: jdbc:postgresql://localhost:5432/votacaodb
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: 21030822
+    hikari:
+      connection-timeout: 60000
+      maximum-pool-size: 10
+      test-while-idle: true
+      validation-query: SELECT 1
